@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MPI Fisika - Medan Magnet</title>
+    <style>
+        :root {
+            --red-north: #E63946;
+            --blue-south: #1D3557;
+            --blue-light: #457B9D;
+            --blue-pale: #A8DADC;
+            --white: #F1FAEE;
+            --dark-text: #1A1A1D;
+            --gray-bg: #EAEAEA;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--gray-bg);
+            color: var(--dark-text);
+            line-height: 1.6;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--red-north), var(--blue-south));
+            color: var(--white);
+            padding: 25px 20px;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            position: relative;
+            overflow: hidden;
+            margin-top: 40px !important;
+        }
+
+        header h1 {
+            font-size: 2rem;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        nav {
+            display: flex;
+            justify-content: center;
+            background-color: var(--white);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .tab-btn {
+            flex: 1;
+            max-width: 250px;
+            padding: 15px;
+            text-align: center;
+            background: none;
+            border: none;
+            border-bottom: 4px solid transparent;
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: var(--blue-south);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .tab-btn:hover {
+            color: var(--red-north);
+            background-color: #f8f9fa;
+        }
+
+        .tab-btn.active {
+            color: var(--red-north);
+            border-bottom: 4px solid var(--red-north);
+            background-color: var(--blue-pale);
+        }
+
+        main {
+            max-width: 900px;
+            margin: 30px auto;
+            padding: 0 15px;
+        }
+
+        .section {
+            display: none;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        .card {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 25px;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.08);
+            border-top: 5px solid var(--blue-light);
+        }
+
+        .card h2 {
+            color: var(--blue-south);
+            margin-bottom: 20px;
+            font-size: 1.6rem;
+            border-bottom: 2px solid var(--blue-pale);
+            padding-bottom: 10px;
+        }
+
+        .highlight-box {
+            background-color: #ffe6e6;
+            border-left: 5px solid var(--red-north);
+            padding: 15px;
+            border-radius: 0 8px 8px 0;
+            margin: 15px 0;
+            font-weight: 500;
+        }
+
+        .canvas-container {
+            position: relative;
+            width: 100%;
+            background-color: #ffffff;
+            border: 2px solid var(--blue-south);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.1);
+            touch-action: none;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            cursor: grab;
+        }
+        
+        canvas:active { cursor: grabbing; }
+
+        .controls {
+            background: var(--blue-pale);
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 15px;
+            text-align: center;
+        }
+
+        .controls label {
+            font-weight: bold;
+            color: var(--blue-south);
+            font-size: 1.1rem;
+        }
+
+        input[type=range] {
+            width: 100%;
+            max-width: 500px;
+            margin: 15px 0;
+            accent-color: var(--red-north);
+        }
+
+        .sim-instruction {
+            display: inline-block;
+            background: var(--blue-south);
+            color: var(--white);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+        }
+
+        .quiz-question {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: var(--blue-south);
+        }
+
+        .option-btn {
+            display: block;
+            width: 100%;
+            text-align: left;
+            background: var(--white);
+            border: 2px solid var(--blue-light);
+            padding: 15px;
+            margin-bottom: 12px;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--dark-text);
+        }
+
+        .option-btn:hover:not(:disabled) {
+            background: var(--blue-pale);
+            border-color: var(--blue-south);
+            transform: translateX(5px);
+        }
+        .option-btn:disabled { cursor: not-allowed; }
+
+        .quiz-feedback {
+            display: none;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            font-size: 1.05rem;
+            line-height: 1.5;
+        }
+        .quiz-feedback.correct { background: #d4edda; color: #155724; border-left: 5px solid #28a745; }
+        .quiz-feedback.wrong { background: #f8d7da; color: #721c24; border-left: 5px solid var(--red-north); }
+
+        .btn-action {
+            background: var(--blue-south);
+            color: var(--white);
+            border: none;
+            padding: 12px 25px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            transition: background 0.3s;
+        }
+        .btn-action:hover { background: var(--red-north); }
+        .btn-action:disabled { background: #888; cursor: not-allowed; }
+
+        .running-text-container {
+            background: linear-gradient(90deg, var(--red-north), var(--blue-south));
+            color: var(--white);
+            overflow: hidden;
+            white-space: nowrap;
+            padding: 8px 0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 10000;
+        }
+
+        .running-text {
+            display: inline-block;
+            padding-left: 100%;
+            animation: marquee 25s linear infinite;
+            font-size: 1.05rem;
+            font-weight: 500;
+        }
+
+        @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
+
+        .cover-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: var(--gray-bg);
+            z-index: 9999;
+            display: flex; align-items: center; justify-content: center;
+            transition: opacity 0.6s ease;
+        }
+
+        #coverCanvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
+
+        .cover-content {
+            position: relative;
+            z-index: 10;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 40px 50px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            border-top: 8px solid var(--red-north);
+            border-bottom: 8px solid var(--blue-south);
+            max-width: 90%;
+            width: 450px;
+            animation: slideIn 1s ease-out;
+        }
+
+        .cover-content h1 {
+            color: var(--blue-south); font-size: 2.2rem; margin-bottom: 10px;
+            text-transform: uppercase; text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+
+        /* Login Form Styles */
+        .login-form {
+            display: flex; flex-direction: column; gap: 15px; margin: 20px 0;
+        }
+        .login-form input {
+            padding: 15px; font-size: 1.1rem;
+            border: 2px solid var(--blue-pale); border-radius: 8px;
+            outline: none; transition: all 0.3s;
+        }
+        .login-form input:focus { border-color: var(--blue-south); box-shadow: 0 0 5px var(--blue-pale); }
+        .error-msg { color: var(--red-north); font-size: 0.9rem; font-weight: bold; display: none; text-align: left; }
+
+        .db-status-box {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            font-weight: bold;
+            display: none;
+            background: #e2e3e5;
+            color: #383d41;
+            border: 1px solid #d6d8db;
+        }
+        
+        .score-circle {
+            width: 130px; height: 130px;
+            background: var(--blue-south); color: white;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-size: 3rem; font-weight: bold; margin: 0 auto 20px auto;
+            border: 6px solid var(--blue-pale); box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+
+        @keyframes slideIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Status Header Data */
+        #user-info { display: none; margin-top: 10px; font-weight: bold; color: var(--gold-light); }
+    </style>
+</head>
+<body>
+
+    <div class="running-text-container">
+        <div class="running-text">🌟 Selamat Datang di Media Pembelajaran Interaktif Fisika Fase F - Madrasah Aliyah Provinsi Gorontalo | Mari Bereksplorasi dan Memahami Konsep Medan Magnet! 🌟</div>
+    </div>
+
+    <div id="cover-screen" class="cover-overlay">
+        <canvas id="coverCanvas"></canvas>
+        <div class="cover-content">
+            <h1>Medan Magnet</h1>
+            <p style="color: #666; margin-bottom: 15px;">Silakan masukkan identitas untuk masuk ke materi.</p>
+            
+            <div class="login-form">
+                <input type="text" id="studentName" placeholder="Nama Lengkap" required>
+                <input type="text" id="studentClass" placeholder="Kelas (Misal: XII IPA 1)" required>
+                <div id="error-msg" class="error-msg">⚠️ Nama dan Kelas wajib diisi!</div>
+            </div>
+
+            <button class="btn-action" style="font-size: 1.2rem; padding: 15px;" onclick="closeCover()">Mulai Belajar 🚀</button>
+        </div>
+    </div>
+
+    <header>
+        <h1>Fisika Fase F: Medan Magnet</h1>
+        <p>Eksplorasi Konsep & Simulasi Interaktif | MA Kelas XII</p>
+        <div id="user-info"></div>
+    </header>
+
+    <nav>
+        <button class="tab-btn active" onclick="openTab('materi', this)">📖 Materi</button>
+        <button class="tab-btn" onclick="openTab('simulasi', this)">🧲 Simulasi</button>
+        <button class="tab-btn" onclick="openTab('kuis', this)">📝 Evaluasi</button>
+    </nav>
+
+    <main>
+        <section id="materi" class="section active card">
+            <h2>🌍 Memahami Medan Magnet di Sekitar Kita</h2>
+            <p>Bayangkan kalian sedang menaiki perahu di tengah <strong>Danau Limboto</strong> saat cuaca berkabut. Tanpa GPS, para nelayan zaman dahulu menggunakan kompas untuk menentukan arah. Jarum kompas selalu menunjuk ke arah Utara dan Selatan bumi. Mengapa demikian? Karena bumi kita adalah sebuah magnet raksasa, dan jarum kompas berinteraksi dengan <strong>Medan Magnet</strong> bumi!</p>
+            
+            <div class="highlight-box">
+                <strong>Medan Magnet (B)</strong> adalah ruang di sekitar magnet atau kawat berarus listrik di mana gaya magnetik masih dapat dirasakan oleh benda magnetik lainnya.
+            </div>
+
+            <h3 style="color: var(--red-north); margin-top: 20px;">Sifat Garis Gaya Magnet:</h3>
+            <ul style="margin-left: 20px; margin-top: 10px; list-style-type: square;">
+                <li>Garis gaya magnet selalu <strong>keluar dari kutub Utara (U)</strong> dan <strong>masuk ke kutub Selatan (S)</strong>.</li>
+                <li>Garis gaya magnet tidak pernah saling berpotongan.</li>
+                <li>Tempat di mana garis gayanya <strong>rapat</strong> menunjukkan medan magnet yang <strong>kuat</strong>.</li>
+            </ul>
+
+            <h3 style="color: var(--red-north); margin-top: 20px;">Kaidah Tangan Kanan</h3>
+            <p style="margin-top: 10px;">Selain magnet permanen, arus listrik juga menghasilkan medan magnet (Hukum Oersted). Untuk menentukan arahnya, kita gunakan <strong>Kaidah Tangan Kanan</strong>:</p>
+            <ul style="margin-left: 20px; margin-top: 5px;">
+                <li><strong>Ibu jari (Jempol)</strong> menunjukkan arah Arus Listrik (I).</li>
+                <li><strong>Empat jari lainnya</strong> yang melingkar menunjukkan arah Medan Magnet (B).</li>
+            </ul>
+        </section>
+
+        <section id="simulasi" class="section card">
+            <h2>🧲 Simulasi Gerak Garis Gaya Magnet</h2>
+            <div style="text-align: center;">
+                <span class="sim-instruction">✨ <strong>Geser (Drag) kompas</strong> ke berbagai posisi di sekitar magnet!</span>
+            </div>
+            <div class="canvas-container" id="canvas-container">
+                <canvas id="magnetCanvas" width="800" height="500"></canvas>
+            </div>
+            <div class="controls">
+                <label for="strengthSlider">Kerapatan / Kuat Medan Magnet: <span id="strengthValue">Sedang</span></label><br>
+                <input type="range" id="strengthSlider" min="1" max="3" value="2" step="1">
+            </div>
+        </section>
+
+        <section id="kuis" class="section card">
+            <h2>📝 Evaluasi Formatif Terintegrasi</h2>
+            
+            <div id="quiz-container">
+                <p style="margin-bottom:15px; font-weight:bold; color: #666;">Pertanyaan <span id="q-number">1</span> dari 5</p>
+                <div class="quiz-question" id="question-text">Memuat pertanyaan...</div>
+                
+                <div id="options-container"></div>
+                <div class="quiz-feedback" id="quiz-feedback"></div>
+                <button class="btn-action" id="btn-next" style="display:none; margin-top:15px;" onclick="nextQuestion()">Selanjutnya ➡️</button>
+            </div>
+
+            <div id="quiz-result" style="display:none; text-align:center;">
+                <h3>Evaluasi Selesai!</h3>
+                <p style="margin-bottom: 20px;">Skor Akhir:</p>
+                <div class="score-circle" id="final-score">100</div>
+                
+                <div id="db-status" class="db-status-box">Menyimpan data ke server... ⏳</div>
+
+                <div style="text-align:left; background:var(--white); padding:20px; border-radius:8px; border: 2px solid var(--blue-pale); margin:20px 0;">
+                    <h4 style="color:var(--blue-south); margin-bottom: 15px; border-bottom: 2px solid var(--gray-bg); padding-bottom: 5px;">Pembahasan Singkat:</h4>
+                    <ul style="font-size:0.95rem; margin-left:15px; line-height:1.6;" id="pembahasan-list"></ul>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // ==========================================
+        // URL WEB APP GOOGLE APPS SCRIPT ANDA DI SINI
+        // ==========================================
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyICyfAh1qgId_8lu-P3jK6A1YqUKFB8gjdtqWUUAKXRKB9VuCwGrZDOPBp3yZHdesCxA/exec'; 
+
+        // State & Variabel Global
+        let studentData = { nama: "", kelas: "" };
+        let quizStartTime = null;
+        let userAnswers = []; // Menyimpan jawaban siswa
+        let currentQuestionIndex = 0;
+        let score = 0;
+
+        // Fungsi Login Cover
+        function closeCover() {
+            const namaInput = document.getElementById('studentName').value.trim();
+            const kelasInput = document.getElementById('studentClass').value.trim();
+            const errorMsg = document.getElementById('error-msg');
+
+            if(namaInput === "" || kelasInput === "") {
+                errorMsg.style.display = 'block';
+                return;
+            }
+
+            // Simpan data siswa
+            studentData.nama = namaInput;
+            studentData.kelas = kelasInput;
+            errorMsg.style.display = 'none';
+
+            // Tampilkan info siswa di header
+            const userInfo = document.getElementById('user-info');
+            userInfo.innerHTML = `👤 ${studentData.nama} | 🏫 ${studentData.kelas}`;
+            userInfo.style.display = 'block';
+
+            // Tutup cover
+            const cover = document.getElementById('cover-screen');
+            cover.style.opacity = '0';
+            setTimeout(() => {
+                cover.style.display = 'none';
+                cancelAnimationFrame(coverAnimationId);
+            }, 600);
+        }
+
+        function openTab(tabId, btnElement) {
+            document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            
+            document.getElementById(tabId).classList.add('active');
+            btnElement.classList.add('active');
+
+            // Catat waktu jika siswa membuka tab kuis pertama kali
+            if(tabId === 'kuis' && !quizStartTime) {
+                quizStartTime = new Date();
+            }
+        }
+
+        // --- Logika Simulasi Magnet (Dipertahankan dari versi sebelumnya) ---
+        const canvas = document.getElementById('magnetCanvas');
+        const ctx = canvas.getContext('2d');
+        let width = canvas.width; let height = canvas.height;
+        const magnet = { width: 250, height: 60, x: width/2, y: height/2, poleDist: 100 };
+        const compass = { x: width/2, y: height/2 - 120, radius: 25, isDragging: false, angle: 0 };
+        let particles = [];
+        const slider = document.getElementById('strengthSlider');
+        const strengthLabel = document.getElementById('strengthValue');
+
+        function getMagneticField(x, y) {
+            const nX = magnet.x - magnet.poleDist; const nY = magnet.y;
+            const sX = magnet.x + magnet.poleDist; const sY = magnet.y;
+            const dxN = x - nX; const dyN = y - nY; const rN = Math.sqrt(dxN*dxN + dyN*dyN) + 1;
+            const dxS = x - sX; const dyS = y - sY; const rS = Math.sqrt(dxS*dxS + dyS*dyS) + 1;
+            const k = 5000;
+            const Bx = k * (dxN / Math.pow(rN, 3)) - k * (dxS / Math.pow(rS, 3));
+            const By = k * (dyN / Math.pow(rN, 3)) - k * (dyS / Math.pow(rS, 3));
+            return { Bx, By };
+        }
+
+        function createParticles() {
+            particles = [];
+            const strength = parseInt(slider.value);
+            const particleCount = strength * 250; 
+            const labels = ["Lemah", "Sedang", "Kuat"];
+            strengthLabel.innerText = labels[strength-1];
+
+            for(let i=0; i<particleCount; i++) {
+                particles.push({
+                    x: Math.random() * width, y: Math.random() * height,
+                    life: Math.random() * 100, speedMult: 0.5 + (strength * 0.3)
+                });
+            }
+        }
+
+        function updateParticles() {
+            ctx.fillStyle = "rgba(255, 255, 255, 0.2)";
+            ctx.fillRect(0, 0, width, height);
+            ctx.lineWidth = 1.5;
+            for(let p of particles) {
+                let B = getMagneticField(p.x, p.y);
+                let mag = Math.sqrt(B.Bx*B.Bx + B.By*B.By);
+                let vX = 0, vY = 0;
+                if(mag > 0) { vX = (B.Bx / mag) * p.speedMult * 3; vY = (B.By / mag) * p.speedMult * 3; }
+                
+                ctx.beginPath(); ctx.moveTo(p.x, p.y);
+                p.x += vX; p.y += vY; p.life -= 0.5;
+                ctx.lineTo(p.x, p.y);
+                ctx.strokeStyle = "rgba(100, 150, 200, 0.6)"; ctx.stroke();
+
+                let isInside = p.x > magnet.x - magnet.width/2 && p.x < magnet.x + magnet.width/2 && p.y > magnet.y - magnet.height/2 && p.y < magnet.y + magnet.height/2;
+                if(p.life <= 0 || p.x < 0 || p.x > width || p.y < 0 || p.y > height || isInside) {
+                    let angle = Math.random() * Math.PI * 2;
+                    let r = 10 + Math.random() * 40;
+                    p.x = magnet.x - magnet.poleDist + Math.cos(angle)*r;
+                    p.y = magnet.y + Math.sin(angle)*r;
+                    p.life = 50 + Math.random() * 100;
+                }
+            }
+        }
+
+        function drawMagnet() {
+            const mX = magnet.x - magnet.width / 2; const mY = magnet.y - magnet.height / 2;
+            ctx.fillStyle = '#E63946'; ctx.fillRect(mX, mY, magnet.width / 2, magnet.height);
+            ctx.fillStyle = 'white'; ctx.font = 'bold 24px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillText('U', mX + magnet.width / 4, magnet.y);
+            ctx.fillStyle = '#1D3557'; ctx.fillRect(mX + magnet.width / 2, mY, magnet.width / 2, magnet.height);
+            ctx.fillStyle = 'white'; ctx.fillText('S', mX + (magnet.width * 0.75), magnet.y);
+            ctx.strokeStyle = '#333'; ctx.lineWidth = 3; ctx.strokeRect(mX, mY, magnet.width, magnet.height);
+        }
+
+        function drawCompass() {
+            let B = getMagneticField(compass.x, compass.y);
+            compass.angle = Math.atan2(B.By, B.Bx);
+            ctx.save(); ctx.translate(compass.x, compass.y);
+            ctx.beginPath(); ctx.arc(0, 0, compass.radius + 5, 0, Math.PI * 2);
+            ctx.fillStyle = '#f0f0f0'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = '#888'; ctx.stroke();
+            ctx.beginPath(); ctx.arc(0, 0, compass.radius, 0, Math.PI * 2); ctx.strokeStyle = '#ddd'; ctx.stroke();
+            ctx.rotate(compass.angle);
+            ctx.beginPath(); ctx.moveTo(0, -6); ctx.lineTo(compass.radius - 2, 0); ctx.lineTo(0, 6); ctx.fillStyle = '#E63946'; ctx.fill();
+            ctx.beginPath(); ctx.moveTo(0, -6); ctx.lineTo(-compass.radius + 2, 0); ctx.lineTo(0, 6); ctx.fillStyle = '#457B9D'; ctx.fill();
+            ctx.beginPath(); ctx.arc(0, 0, 3, 0, Math.PI * 2); ctx.fillStyle = '#333'; ctx.fill();
+            ctx.restore();
+        }
+
+        function animate() {
+            updateParticles(); drawMagnet(); drawCompass(); requestAnimationFrame(animate);
+        }
+
+        slider.addEventListener('input', createParticles);
+        
+        function getMousePos(evt) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width; const scaleY = canvas.height / rect.height;
+            let clientX = evt.clientX; let clientY = evt.clientY;
+            if(evt.touches && evt.touches.length > 0) { clientX = evt.touches[0].clientX; clientY = evt.touches[0].clientY; }
+            return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
+        }
+
+        function onPointerDown(e) {
+            const pos = getMousePos(e);
+            if(Math.sqrt((pos.x - compass.x)**2 + (pos.y - compass.y)**2) <= compass.radius + 15) { compass.isDragging = true; e.preventDefault(); }
+        }
+        function onPointerMove(e) { if(compass.isDragging) { const pos = getMousePos(e); compass.x = pos.x; compass.y = pos.y; e.preventDefault(); } }
+        function onPointerUp(e) { compass.isDragging = false; }
+
+        canvas.addEventListener('mousedown', onPointerDown); canvas.addEventListener('mousemove', onPointerMove); window.addEventListener('mouseup', onPointerUp);
+        canvas.addEventListener('touchstart', onPointerDown, {passive: false}); canvas.addEventListener('touchmove', onPointerMove, {passive: false}); window.addEventListener('touchend', onPointerUp);
+
+        // --- Data Kuis ---
+        const quizData = [
+            {
+                question: "1. Berdasarkan pengamatan pada simulasi, arah garis gaya magnet selalu...",
+                options: ["Keluar dari S ke U", "Keluar dari U ke S", "Bergerak sejajar", "Saling berpotongan"],
+                correct: 1, explanation: "Garis gaya magnet selalu keluar dari Kutub Utara (U) dan masuk ke Kutub Selatan (S)."
+            },
+            {
+                question: "2. Kerapatan garis gaya pada simulasi menunjukkan...",
+                options: ["Arah arus listrik", "Kuat medan magnet", "Perubahan kutub", "Suhu magnet"],
+                correct: 1, explanation: "Semakin rapat garisnya, semakin kuat medan magnetnya (B)."
+            },
+            {
+                question: "3. Saat kompas mendekati bagian tengah batang magnet, jarum merah (Utara) menunjuk ke...",
+                options: ["Lurus menjauh", "Kutub Utara magnet", "Kutub Selatan magnet", "Berputar tak henti"],
+                correct: 2, explanation: "Kutub berlawanan tarik menarik, Jarum Utara (Merah) tertarik ke Selatan magnet (Biru)."
+            },
+            {
+                question: "4. Arah utara jarum kompas menunjuk ke kutub utara geografis bumi. Ini berarti di sekitar kutub utara geografis bumi terdapat...",
+                options: ["Kutub Utara Magnet", "Kutub Selatan Magnet", "Medan Listrik", "Kawat Berarus"],
+                correct: 1, explanation: "Di Utara geografis bumi sebenarnya terdapat Kutub Selatan Magnet Bumi."
+            },
+            {
+                question: "5. Menggunakan Kaidah Tangan Kanan pada kawat vertikal arus ke atas. Arah medan magnet di sebelah kanan kawat menunjuk ke...",
+                options: ["Atas", "Bawah", "Masuk menembus bidang", "Keluar bidang"],
+                correct: 2, explanation: "Ibu jari ke atas, putaran 4 jari menembus/masuk bidang (Cross) di sebelah kanan kawat."
+            }
+        ];
+
+        function loadQuestion() {
+            const q = quizData[currentQuestionIndex];
+            document.getElementById('q-number').innerText = currentQuestionIndex + 1;
+            document.getElementById('question-text').innerText = q.question;
+            const optionsContainer = document.getElementById('options-container');
+            optionsContainer.innerHTML = '';
+            document.getElementById('quiz-feedback').style.display = 'none';
+            document.getElementById('btn-next').style.display = 'none';
+
+            q.options.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.innerText = opt;
+                btn.onclick = () => checkAnswer(index, btn, opt);
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        function checkAnswer(selectedIndex, btnElement, optionText) {
+            const q = quizData[currentQuestionIndex];
+            const feedbackEl = document.getElementById('quiz-feedback');
+            const btns = document.querySelectorAll('.option-btn');
+
+            // Simpan jawaban siswa untuk dikirim ke database
+            userAnswers[currentQuestionIndex] = optionText;
+
+            btns.forEach(btn => btn.disabled = true);
+
+            if (selectedIndex === q.correct) {
+                btnElement.style.background = '#d4edda'; btnElement.style.borderColor = '#28a745';
+                feedbackEl.className = 'quiz-feedback correct';
+                feedbackEl.innerHTML = `✅ <strong>Tepat!</strong><br>${q.explanation}`;
+                score += 20; 
+            } else {
+                btnElement.style.background = '#f8d7da'; btnElement.style.borderColor = 'var(--red-north)';
+                btns[q.correct].style.background = '#d4edda'; btns[q.correct].style.borderColor = '#28a745';
+                feedbackEl.className = 'quiz-feedback wrong';
+                feedbackEl.innerHTML = `💡 <strong>Kurang tepat.</strong><br>${q.explanation}`;
+            }
+
+            feedbackEl.style.display = 'block';
+            document.getElementById('btn-next').style.display = 'block';
+        }
+
+        function nextQuestion() {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < quizData.length) {
+                loadQuestion();
+            } else {
+                showResult();
+            }
+        }
+
+        function showResult() {
+            document.getElementById('quiz-container').style.display = 'none';
+            document.getElementById('quiz-result').style.display = 'block';
+            
+            const finalScoreEl = document.getElementById('final-score');
+            finalScoreEl.innerText = score;
+            
+            if(score === 100) finalScoreEl.style.background = '#28a745';
+            else if(score < 60) finalScoreEl.style.background = 'var(--red-north)';
+            
+            const listEl = document.getElementById('pembahasan-list');
+            listEl.innerHTML = '';
+            quizData.forEach((q, i) => {
+                const li = document.createElement('li'); li.style.marginBottom = '10px';
+                li.innerHTML = `<strong>Topik ${i+1}:</strong> ${q.explanation}`; listEl.appendChild(li);
+            });
+
+            // Menghitung Waktu dan Persiapan Kirim Data
+            let quizEndTime = new Date();
+            let timeString = "Tidak terekam";
+            if(quizStartTime) {
+                let timeTaken = Math.round((quizEndTime - quizStartTime) / 1000);
+                let minutes = Math.floor(timeTaken / 60);
+                let seconds = timeTaken % 60;
+                timeString = `${minutes} menit ${seconds} detik`;
+            }
+
+            let benar = score / 20;
+            let salah = 5 - benar;
+
+            let payload = {
+                nama: studentData.nama,
+                kelas: studentData.kelas,
+                waktu: timeString,
+                skor: score,
+                benar: benar,
+                salah: salah,
+                jawaban: userAnswers
+            };
+
+            // Mencegah error jika jawaban kosong karena di-skip
+            for(let i=0; i<5; i++) {
+                if(!payload.jawaban[i]) payload.jawaban[i] = "Tidak dijawab";
+            }
+
+            sendDataToGAS(payload);
+        }
+
+        function sendDataToGAS(data) {
+            const statusBox = document.getElementById('db-status');
+            statusBox.style.display = 'block';
+            statusBox.innerHTML = "📡 Menyimpan data ke server...";
+            statusBox.style.background = "#e2e3e5";
+
+            if (SCRIPT_URL === 'URL_GAS_ANDA_DISINI') {
+                statusBox.innerHTML = "⚠️ Peringatan: URL Database (GAS) belum dikonfigurasi oleh Guru.";
+                statusBox.style.background = "#fff3cd";
+                return;
+            }
+
+            fetch(SCRIPT_URL, {
+                method: 'POST',
+                // Mode text/plain mencegah isu CORS saat memanggil GAS
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' }, 
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(res => {
+                if(res.result === "success") {
+                    statusBox.innerHTML = "✅ Hasil Evaluasi berhasil disimpan ke Database Guru!";
+                    statusBox.style.background = "#d4edda";
+                    statusBox.style.color = "#155724";
+                } else {
+                    throw new Error("Respon error dari server");
+                }
+            })
+            .catch(error => {
+                statusBox.innerHTML = "❌ Gagal menyimpan data (Pastikan internet aktif).";
+                statusBox.style.background = "#f8d7da";
+                statusBox.style.color = "#721c24";
+                console.error("Fetch error: ", error);
+            });
+        }
+
+        // --- Logika Cover & Animasi Background (Dipertahankan) ---
+        let coverAnimationId;
+        function initCover() {
+            const coverCanvas = document.getElementById('coverCanvas');
+            const cctx = coverCanvas.getContext('2d');
+            coverCanvas.width = window.innerWidth; coverCanvas.height = window.innerHeight;
+            let coverParticles = [];
+            for(let i=0; i<400; i++) {
+                coverParticles.push({
+                    x: Math.random() * coverCanvas.width, y: Math.random() * coverCanvas.height,
+                    life: Math.random() * 100, speedMult: 1.5
+                });
+            }
+            
+            function animateCover() {
+                cctx.fillStyle = "rgba(234, 234, 234, 0.3)"; cctx.fillRect(0, 0, coverCanvas.width, coverCanvas.height);
+                const cMag = { x: coverCanvas.width/2, y: coverCanvas.height/2, w: 280, h: 70, pD: 110 };
+                cctx.fillStyle = '#E63946'; cctx.fillRect(cMag.x - cMag.w/2, cMag.y - cMag.h/2, cMag.w/2, cMag.h);
+                cctx.fillStyle = '#1D3557'; cctx.fillRect(cMag.x, cMag.y - cMag.h/2, cMag.w/2, cMag.h);
+                cctx.fillStyle = 'white'; cctx.font = 'bold 28px Arial'; cctx.textAlign = 'center'; cctx.textBaseline = 'middle';
+                cctx.fillText('U', cMag.x - cMag.w/4, cMag.y); cctx.fillText('S', cMag.x + cMag.w/4, cMag.y);
+
+                cctx.lineWidth = 1.5;
+                for(let p of coverParticles) {
+                    const dxN = p.x - (cMag.x - cMag.pD); const dyN = p.y - cMag.y; const rN = Math.sqrt(dxN*dxN + dyN*dyN)+1;
+                    const dxS = p.x - (cMag.x + cMag.pD); const dyS = p.y - cMag.y; const rS = Math.sqrt(dxS*dxS + dyS*dyS)+1;
+                    const k = 6000;
+                    const Bx = k*(dxN/Math.pow(rN,3)) - k*(dxS/Math.pow(rS,3)); const By = k*(dyN/Math.pow(rN,3)) - k*(dyS/Math.pow(rS,3));
+                    let mag = Math.sqrt(Bx*Bx + By*By); let vX=0, vY=0;
+                    if(mag>0) { vX = (Bx/mag)*p.speedMult*3; vY = (By/mag)*p.speedMult*3; }
+                    cctx.beginPath(); cctx.moveTo(p.x, p.y); p.x += vX; p.y += vY; p.life -= 0.5;
+                    cctx.lineTo(p.x, p.y); cctx.strokeStyle = "rgba(100, 150, 200, 0.5)"; cctx.stroke();
+                    let isInside = p.x>cMag.x-cMag.w/2 && p.x<cMag.x+cMag.w/2 && p.y>cMag.y-cMag.h/2 && p.y<cMag.y+cMag.h/2;
+                    if(p.life<=0 || p.x<0 || p.x>coverCanvas.width || p.y<0 || p.y>coverCanvas.height || isInside) {
+                        let angle = Math.random()*Math.PI*2; let r = 10+Math.random()*40;
+                        p.x = cMag.x-cMag.pD+Math.cos(angle)*r; p.y = cMag.y+Math.sin(angle)*r; p.life = 50+Math.random()*100;
+                    }
+                }
+                coverAnimationId = requestAnimationFrame(animateCover);
+            }
+            animateCover();
+        }
+
+        window.onload = () => {
+            createParticles();
+            animate(); 
+            loadQuestion(); 
+            initCover(); 
+        };
+    </script>
+</body>
+</html>
